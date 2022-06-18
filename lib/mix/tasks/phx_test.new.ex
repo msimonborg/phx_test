@@ -21,27 +21,29 @@ defmodule Mix.Tasks.PhxTest.New do
 
     {context, argv} = parse_opts(argv)
 
-    phx_config_path = "../#{context.sub_directory}/#{context.app_path}/config/config.exs"
-
-    config_exists? = File.exists?("config/config.exs")
-    unless config_exists?, do: write_config(phx_config_path)
-
     Phx.New.run(argv)
 
-    if config_exists?, do: prompt_for_config(phx_config_path)
+    phx_config_path = "../#{context.sub_directory}/#{context.app_path}/config/config.exs"
+
+    if File.exists?("config/config.exs") do
+      inject_config(phx_config_path)
+    else
+      write_config(phx_config_path)
+    end
   end
 
-  defp prompt_for_config(config_path) do
-    Mix.shell().info("""
-    Detected an existing config/config.exs file, add the following line to your
-    existing config for your desired environment:
+  defp inject_config(phx_config_path) do
+    path = "config/config.exs"
+    Mix.shell().info([:green, "* injecting ", :reset, Path.relative_to_cwd(path)])
 
-        import_config "#{config_path}"
-
-    """)
+    path
+    |> File.read!()
+    |> Kernel.<>("\n")
+    |> Kernel.<>(import_config(phx_config_path))
+    |> then(&File.write!(path, &1))
   end
 
-  defp write_config(config_path) do
+  defp write_config(phx_config_path) do
     File.mkdir("config")
 
     Mix.Generator.create_file("config/config.exs", """
@@ -54,14 +56,20 @@ defmodule Mix.Tasks.PhxTest.New do
     # General application configuration
     import Config
 
+    #{import_config(phx_config_path)}
+    """)
+  end
+
+  defp import_config(phx_config_path) do
+    """
     # If you are developing a hex package, this config will not be included
     # with your published library.
     #
     # If your config ships with your library or
     # production application, you may want to move this line to the desired
     # environment config file. e.g. config/dev.exs, config/test.exs
-    import_config "#{config_path}"
-    """)
+    import_config "#{phx_config_path}"
+    """
   end
 
   defp parse_opts(argv) do
