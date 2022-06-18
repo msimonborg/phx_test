@@ -5,7 +5,7 @@ defmodule PhxTest.MixProject do
     [
       app: :phx_test,
       version: "0.1.0",
-      elixir: "~> 1.13",
+      elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
@@ -16,14 +16,15 @@ defmodule PhxTest.MixProject do
 
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :phx_new]
     ]
   end
 
   defp deps do
     [
       {:credo, ">= 0.0.0", only: [:dev, :test]},
-      {:ex_doc, ">= 0.0.0", only: [:dev, :test]}
+      {:ex_doc, ">= 0.0.0", only: [:dev, :test]},
+      {:phx_new, "~> 1.6"}
     ]
   end
 
