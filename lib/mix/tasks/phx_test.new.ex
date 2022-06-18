@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.PhxTest.New do
   @readme "README.md"
           |> File.read!()
-          |> String.split("<!-- TaskDoc -->")
+          |> String.split("<!-- ModuleDoc -->")
           |> Enum.at(1)
 
   @moduledoc """

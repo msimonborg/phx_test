@@ -23,8 +23,6 @@ $ mix phx_test.new my_app --sub-directory sample_apps # generates /sample_apps/m
 $ mix phx_test.new --no-ecto --no-dashboard --no-mailer --no-gettext
 ```
 
-<!-- TaskDoc -->
-
 By default `mix phx_test.new` will generate a new Phoenix project called `phx_test_app` in the `priv/` directory. You can also specify a custom app name and subdirectory with `mix phx_test.new APP_PATH [--sub-directory DIR]`. All other options are passed directly to `mix phx.new`.
 
 ## Config
@@ -34,3 +32,5 @@ The `mix phx_test.new` task will also create a `config/config.exs` file if it do
 If you are developing a library for other developers, neither the Phoenix project nor any of its config or dependencies will be included with your package as long as you do not include the path to the project in your `package()[:files]` option in `mix.exs`.
 
 If you are developing a production application and want to make sure that the embedded Phoenix project's config does not leak into your production environement, simply move the `import_config "../<sub_directory>/<app_name>/config/config.exs"` statement into your desired environement config file (`dev.exs`, `test.exs`, etc.).
+
+<!-- ModuleDoc -->
