@@ -9,7 +9,8 @@ defmodule PhxTest.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
-      description: description()
+      description: description(),
+      aliases: aliases()
     ]
   end
 
@@ -19,7 +20,12 @@ defmodule PhxTest.MixProject do
     ]
   end
 
-  defp deps, do: []
+  defp deps do
+    [
+      {:credo, ">= 0.0.0", only: [:dev, :test]},
+      {:ex_doc, ">= 0.0.0", only: [:dev, :test]}
+    ]
+  end
 
   defp description do
     """
@@ -35,6 +41,12 @@ defmodule PhxTest.MixProject do
       links: %{
         "GitHub" => "https://github.com/msimonborg/phx_test"
       }
+    ]
+  end
+
+  defp aliases do
+    [
+      test: ["test", "credo --strict", "format --check-formatted", "docs"]
     ]
   end
 end
