@@ -34,7 +34,7 @@ defmodule Mix.Tasks.PhxTest.New do
 
   defp inject_config(phx_config_path) do
     path = "config/config.exs"
-    Mix.shell().info([:green, "* injecting ", :reset, Path.relative_to_cwd(path)])
+    Mix.shell().info([:green, "* injecting ", :reset, path])
 
     path
     |> File.read!()
