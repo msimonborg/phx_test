@@ -12,23 +12,67 @@ defmodule Mix.Tasks.PhxTest.New do
 
   use Mix.Task
 
-  alias Mix.Tasks.Phx
+  alias Mix.{PhxTest.Context, Tasks.Phx}
 
   @impl true
   def run(argv) do
     Application.ensure_all_started(:phx_test)
     validate_phx_new!()
-    argv = parse_opts(argv)
+
+    {context, argv} = parse_opts(argv)
+
+    phx_config_path = "../#{context.sub_directory}/#{context.app_path}/config/config.exs"
+
+    config_exists? = File.exists?("config/config.exs")
+    unless config_exists?, do: write_config(phx_config_path)
+
     Phx.New.run(argv)
+
+    if config_exists?, do: prompt_for_config(phx_config_path)
+  end
+
+  defp prompt_for_config(config_path) do
+    Mix.shell().info("""
+    Detected an existing config/config.exs file, add the following line to your
+    existing config for your desired environment:
+
+        import_config "#{config_path}"
+
+    """)
+  end
+
+  defp write_config(config_path) do
+    File.mkdir("config")
+
+    Mix.Generator.create_file("config/config.exs", """
+    # This file is responsible for configuring your application
+    # and its dependencies with the aid of the Config module.
+    #
+    # This configuration file is loaded before any dependency and
+    # is restricted to this project.
+
+    # General application configuration
+    import Config
+
+    # If you are developing a hex package, this config will not be included
+    # with your published library.
+    #
+    # If your config ships with your library or
+    # production application, you may want to move this line to the desired
+    # environment config file. e.g. config/dev.exs, config/test.exs
+    import_config "#{config_path}"
+    """)
   end
 
   defp parse_opts(argv) do
     case OptionParser.parse(argv, strict: [sub_directory: :string]) do
-      {[], [path | _], _} ->
-        inject_sub_dir("priv", path, argv)
-
       {[{:sub_directory, dir}], [path | _], _} ->
-        inject_sub_dir(dir, path, argv)
+        context = Context.new(dir, path)
+        argv = inject_sub_dir(dir, path, argv)
+        {context, argv}
+
+      {[], [_ | _], _} ->
+        parse_opts(argv ++ ["--sub-directory", "priv"])
 
       {_, [], _} ->
         parse_opts(["phx_test_app" | argv])
