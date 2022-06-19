@@ -18,6 +18,7 @@ defmodule Mix.Tasks.PhxTest.New do
   def run(argv) do
     Application.ensure_all_started(:phx_test)
     validate_phx_new!()
+    raise_if_umbrella!(argv)
 
     {context, argv} = parse_opts(argv)
 
@@ -25,7 +26,8 @@ defmodule Mix.Tasks.PhxTest.New do
 
     Mix.shell().info([:yellow, "***** From phx_test *****", :reset])
 
-    phx_config_path = "../#{context.sub_directory}/#{context.app_name}/config/config.exs"
+    phx_path = "#{context.sub_directory}/#{context.app_name}/"
+    phx_config_path = "../#{phx_path}config/config.exs"
 
     if File.exists?("config/config.exs") do
       inject_into_existing_config(phx_config_path)
@@ -33,9 +35,13 @@ defmodule Mix.Tasks.PhxTest.New do
       write_config_file(phx_config_path)
     end
 
+    inject_test_requirements(context)
+
     context
-    |> inject_dep()
+    |> inject_deps()
     |> prompt_to_install_deps()
+
+    if context.ecto?, do: ecto_message(phx_path)
   end
 
   defp inject_into_existing_config(phx_config_path) do
@@ -81,7 +87,7 @@ defmodule Mix.Tasks.PhxTest.New do
   defp parse_opts(argv) do
     case OptionParser.parse(argv, strict: [sub_directory: :string]) do
       {[{:sub_directory, dir}], [path | _], _} ->
-        context = Context.new(dir, path)
+        context = Context.new(dir, path, ecto?(argv))
         argv = inject_sub_dir(dir, path, argv)
         {context, argv}
 
@@ -96,6 +102,26 @@ defmodule Mix.Tasks.PhxTest.New do
   defp inject_sub_dir(dir, path, argv) do
     argv = argv -- ["--sub-directory", dir, path]
     ["#{dir}/#{path}" | argv]
+  end
+
+  defp ecto?(argv) do
+    case OptionParser.parse(argv, strict: [ecto: :boolean]) do
+      {[ecto: false], _, _} -> false
+      _ -> true
+    end
+  end
+
+  defp raise_if_umbrella!(argv) do
+    case OptionParser.parse(argv, strict: [umbrella: :boolean]) do
+      {[umbrella: true], _, _} -> raise_umbrella_error!()
+      _ -> :ok
+    end
+  end
+
+  defp raise_umbrella_error! do
+    Mix.raise("""
+    `mix phx_test.new` does not support the --umbrella option
+    """)
   end
 
   defp validate_phx_new! do
@@ -122,11 +148,11 @@ defmodule Mix.Tasks.PhxTest.New do
     """)
   end
 
-  defp inject_dep(%{app_name: app_name, sub_directory: sub_directory}) do
+  defp inject_deps(%{app_name: app_name, sub_directory: sub_directory}) do
     path = "mix.exs"
 
     deps =
-      "\n      {:#{app_name}, path: \"./#{sub_directory}/#{app_name}\", only: [:test, :dev]}," <>
+      "      {:#{app_name}, path: \"./#{sub_directory}/#{app_name}\", only: [:test, :dev]}," <>
         "\n      {:phoenix_live_reload, \"~> 1.2\", only: :dev}," <>
         "\n      {:floki, \">= 0.30.0\", only: :test},\n"
 
@@ -155,10 +181,46 @@ defmodule Mix.Tasks.PhxTest.New do
     deps
   end
 
+  defp inject_test_requirements(context) do
+    %{app_name: app_name, sub_directory: sub_directory, ecto?: ecto?} = context
+    test_dir_path = "#{sub_directory}/#{app_name}/test"
+
+    comment = """
+    # Your Phoenix test app's test cases must be explicitly
+    # required by your test helper in order to use them in your
+    # root project's tests.
+    """
+
+    injection =
+      comment
+      |> maybe_add_ecto_paths(test_dir_path, ecto?)
+      |> add_conn_case_path(test_dir_path)
+
+    path = "test/test_helper.exs"
+    test_helper_contents = File.read!(path)
+
+    Mix.shell().info([:green, "* injecting ", :reset, path])
+    File.write!(path, injection <> test_helper_contents)
+  end
+
+  defp maybe_add_ecto_paths(injection, test_dir_path, ecto?) do
+    if ecto? do
+      injection <>
+        "Code.require_file(\"#{test_dir_path}/test_helper.exs\")\n" <>
+        "Code.require_file(\"#{test_dir_path}/support/data_case.ex\")\n"
+    else
+      injection
+    end
+  end
+
+  defp add_conn_case_path(injection, test_dir_path) do
+    injection <> "Code.require_file(\"#{test_dir_path}/support/conn_case.ex\")\n\n"
+  end
+
   defp prompt_to_install_deps(deps) do
     install? =
       Mix.shell().yes?(
-        "\nAdded new dev and test dependencies to your root project's mix.exs:\n" <>
+        "\nAdded new dev and test dependencies to your root project's mix.exs:\n\n" <>
           String.trim_trailing(deps, ",\n") <>
           "\n\nDo you want to install them now?"
       )
@@ -170,7 +232,24 @@ defmodule Mix.Tasks.PhxTest.New do
       Mix.shell().info([:green, "* running", :reset, " mix deps.compile"])
       System.cmd("mix", ["deps.compile"])
     else
-      Mix.shell().info("\nRemember to install your dependencies later")
+      Mix.shell().info("\nRemember to install your dependencies later\n")
     end
+  end
+
+  defp ecto_message(phx_path) do
+    Mix.shell().info("""
+
+    You must manually create your test database before running your tests:
+
+        $ cd #{phx_path}
+        $ MIX_ENV=test mix ecto.create
+
+    Remember to run any future database commands in the test environment. e.g.
+
+        $ mix ecto.migrate
+        $ MIX_ENV=test mix ecto.migrate
+
+    These will not be done for you automatically when running `mix test` from your root project directory.
+    """)
   end
 end

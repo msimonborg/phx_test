@@ -22,6 +22,9 @@ defmodule PhxTest.MixProject do
 
   defp deps do
     [
+      {:phx_test_app, path: "./priv/phx_test_app", only: [:test, :dev]},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
+      {:floki, ">= 0.30.0", only: :test},
       {:credo, ">= 0.0.0", only: [:dev, :test]},
       {:ex_doc, ">= 0.0.0", only: [:dev, :test]},
       {:phx_new, "~> 1.6"}
