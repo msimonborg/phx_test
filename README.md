@@ -1,15 +1,25 @@
 # PhxTest
 
-<!-- ModuleDoc -->
-
 Quickly embed Phoenix sample apps in your project for library development.
 
+## Problem
+
+In order to build packages for Phoenix applications, it may be necessary to load a running Phoenix project in development and tests. However, when you ship your library you want to be sure that neither the Phoenix test app nor any of its dependencies are leaked into your distribution.
+
+## Solution
+
+It is possible to embed a Phoenix project into a subdirectory of your project as a dev and test dependency, with full access to its modules and dependencies in your tests and dev environment. You can even start the server directly from your root project directory with `mix phx.server` or `iex -S mix phx.server`, just as you would in a normal Phoenix project.
+
+<!-- ModuleDoc -->
+
 ## Installation
+
+`phx_test` is avaialble on [hex.pm](https://hex.pm/packages/phx_test). See the official documentation on [hexdocs](https://hexdocs.pm/phx_test).
 
 ```elixir
 def deps do
   [
-    {:phx_test, git: "https://github.com/msimonborg/phx_test", only: [:dev, :test]}
+    {:phx_test, "~> 0.1.0", only: [:dev, :test]}
   ]
 end
 ```
@@ -23,7 +33,7 @@ $ mix phx_test.new my_app --sub-directory sample_apps # generates /sample_apps/m
 $ mix phx_test.new --no-ecto --no-dashboard --no-mailer --no-gettext
 ```
 
-By default `mix phx_test.new` will generate a new Phoenix project called `phx_test_app` in the `priv/` directory. You can also specify a custom app name and subdirectory with `mix phx_test.new APP_PATH [--sub-directory DIR]`. All other options are passed directly to `mix phx.new`, except `--umbrella`, which `mix phx_test.new` does not support.
+This task wraps `mix phx.new` and adds some conveniences for embedding a sample Phoenix app inside of another project for development and testing purposes. By default `mix phx_test.new` will generate a new Phoenix project called `phx_test_app` in the `priv/` directory. You can also specify a custom app name and subdirectory with `mix phx_test.new APP_PATH [--sub-directory DIR]`. All other options are passed directly to `mix phx.new`, except `--umbrella`, which `mix phx_test.new` does not support.
 
 ## Dependencies
 
@@ -93,4 +103,13 @@ Since your Phoenix test app is now a test dependency of your root project, all o
 ## Umbrella projects
 
 Creating umbrella test apps is not supported.
+
+## License
+
+[MIT - Copyright (c) 2022 M. Simon Borg](https://github.com/msimonborg/phx_test/blob/main/LICENSE)
+
 <!-- ModuleDoc -->
+
+## Contributing
+
+Pull requests are welcome. I encourage you to open an issue first so we can discuss the idea, and so you can be sure that the work you're proposing isn't already in development.
