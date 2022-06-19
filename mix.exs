@@ -16,7 +16,7 @@ defmodule PhxTest.MixProject do
 
   def application do
     [
-      extra_applications: [:logger, :phx_new]
+      extra_applications: [:logger]
     ]
   end
 
