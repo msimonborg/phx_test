@@ -4,7 +4,7 @@ defmodule PhxTest.MixProject do
   def project do
     [
       app: :phx_test,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -36,12 +36,21 @@ defmodule PhxTest.MixProject do
 
   defp package do
     [
-      files: ["lib", "mix.exs", "README.md"],
+      files: files(),
       maintainers: ["m. simon borg"],
       licenses: ["MIT"],
       links: %{
         "GitHub" => "https://github.com/msimonborg/phx_test"
       }
+    ]
+  end
+
+  defp files do
+    [
+      "lib/mix/tasks/phx_test.new.ex",
+      "lib/mix/phx_test/context.ex",
+      "mix.exs",
+      "README.md"
     ]
   end
 
