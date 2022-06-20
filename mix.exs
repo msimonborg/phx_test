@@ -16,15 +16,12 @@ defmodule PhxTest.MixProject do
 
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :phx_new]
     ]
   end
 
   defp deps do
     [
-      {:phx_test_app, path: "./priv/phx_test_app", only: [:test, :dev]},
-      {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:floki, ">= 0.30.0", only: :test},
       {:credo, ">= 0.0.0", only: [:dev, :test]},
       {:ex_doc, ">= 0.0.0", only: [:dev, :test]},
       {:phx_new, "~> 1.6"}
@@ -50,7 +47,9 @@ defmodule PhxTest.MixProject do
 
   defp aliases do
     [
-      test: ["test", "credo --strict", "format --check-formatted", "docs"]
+      test: ["test", "credo --strict", "format --check-formatted", "docs"],
+      setup: ["phx_test.test --setup"],
+      teardown: ["phx_test.test --teardown"]
     ]
   end
 end

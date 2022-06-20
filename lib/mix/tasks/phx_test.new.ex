@@ -37,9 +37,8 @@ defmodule Mix.Tasks.PhxTest.New do
 
     inject_test_requirements(context)
 
-    context
-    |> inject_deps()
-    |> prompt_to_install_deps()
+    deps = inject_deps(context)
+    maybe_prompt_to_install_deps(context, deps)
 
     if context.ecto?, do: ecto_message(phx_path)
   end
@@ -68,7 +67,7 @@ defmodule Mix.Tasks.PhxTest.New do
     # General application configuration
     import Config
 
-    #{import_config(phx_config_path)}
+    #{String.trim_trailing(import_config(phx_config_path), "\n")}
     """)
   end
 
@@ -87,7 +86,7 @@ defmodule Mix.Tasks.PhxTest.New do
   defp parse_opts(argv) do
     case OptionParser.parse(argv, strict: [sub_directory: :string]) do
       {[{:sub_directory, dir}], [path | _], _} ->
-        context = Context.new(dir, path, ecto?(argv))
+        context = Context.new(dir, path, ecto?(argv), install?(argv))
         argv = inject_sub_dir(dir, path, argv)
         {context, argv}
 
@@ -108,6 +107,13 @@ defmodule Mix.Tasks.PhxTest.New do
     case OptionParser.parse(argv, strict: [ecto: :boolean]) do
       {[ecto: false], _, _} -> false
       _ -> true
+    end
+  end
+
+  defp install?(argv) do
+    case OptionParser.parse(argv, strict: [install: :boolean]) do
+      {[install: true], _, _} -> true
+      _ -> false
     end
   end
 
@@ -186,6 +192,7 @@ defmodule Mix.Tasks.PhxTest.New do
     test_dir_path = "#{sub_directory}/#{app_name}/test"
 
     comment = """
+
     # Your Phoenix test app's test cases must be explicitly
     # required by your test helper in order to use them in your
     # root project's tests.
@@ -200,7 +207,7 @@ defmodule Mix.Tasks.PhxTest.New do
     test_helper_contents = File.read!(path)
 
     Mix.shell().info([:green, "* injecting ", :reset, path])
-    File.write!(path, injection <> test_helper_contents)
+    File.write!(path, test_helper_contents <> injection)
   end
 
   defp maybe_add_ecto_paths(injection, test_dir_path, ecto?) do
@@ -214,16 +221,17 @@ defmodule Mix.Tasks.PhxTest.New do
   end
 
   defp add_conn_case_path(injection, test_dir_path) do
-    injection <> "Code.require_file(\"#{test_dir_path}/support/conn_case.ex\")\n\n"
+    injection <> "Code.require_file(\"#{test_dir_path}/support/conn_case.ex\")\n"
   end
 
-  defp prompt_to_install_deps(deps) do
+  defp maybe_prompt_to_install_deps(context, deps) do
     install? =
-      Mix.shell().yes?(
-        "\nAdded new dev and test dependencies to your root project's mix.exs:\n\n" <>
-          String.trim_trailing(deps, ",\n") <>
-          "\n\nDo you want to install them now?"
-      )
+      context.install? or
+        Mix.shell().yes?(
+          "\nAdded new dev and test dependencies to your root project's mix.exs:\n\n" <>
+            String.trim_trailing(deps, ",\n") <>
+            "\n\nDo you want to install them now?"
+        )
 
     if install? do
       Mix.shell().info([:green, "* running", :reset, " mix deps.get"])
